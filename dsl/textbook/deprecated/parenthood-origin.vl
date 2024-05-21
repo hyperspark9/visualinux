@@ -1,0 +1,58 @@
+import lib.containers
+
+define TaskParenthood as Box<task_struct> {
+    :default [
+        Text pid, comm
+        Text __state
+        Text ppid: parent.pid
+    ]
+    :default => :parent [
+        // remove ppid
+        Link parent -> @parent
+    ]
+    :default => :origin [
+        Shape children: @children
+        Shape sibling:  @sibling
+    ]
+} where {
+    parent = TaskParenthood:parent(@this.parent)
+    children = Box(@this.children) [
+        Link next -> @next
+        Link prev ~> @prev
+    ] where {
+        next = switch @this.next {
+        case @this: TaskParenthood:origin<task_struct.children>(@this.next)
+        otherwise:  TaskParenthood:origin<task_struct.sibling>(@this.next)
+        }
+        prev = switch @this.prev {
+        case @this: TaskParenthood:origin<task_struct.children>(@this.prev)
+        otherwise:  TaskParenthood:origin<task_struct.sibling>(@this.prev)
+        }
+    }
+    sibroot = @this.parent.children
+    sibling = Box(@this.sibling) [
+        Link next -> @next
+        Link prev ~> @prev
+    ] where {
+        next = switch @this.next {
+        case @sibroot: TaskParenthood:origin<task_struct.children>(@sibroot)
+        otherwise:     TaskParenthood:origin<task_struct.sibling>(@this.next)
+        }
+        prev = switch @this.prev {
+        case @sibroot: TaskParenthood:origin<task_struct.children>(@sibroot)
+        otherwise:     TaskParenthood:origin<task_struct.sibling>(@this.prev)
+        }
+    }
+}
+
+tp_init_task = TaskParenthood(${&init_task})
+view process_tree {
+    plot @tp_init_task:origin
+}
+
+// TODO: fix the init_abst confliction
+// init_abst should be view-local, not per-shape
+// tp_current_task = TaskParenthood(${per_cpu(current_task, 0)})
+// view process_parent_chain {
+//     plot @tp_current_task:parent
+// }

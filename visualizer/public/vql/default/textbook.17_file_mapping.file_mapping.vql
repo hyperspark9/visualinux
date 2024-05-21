@@ -1,0 +1,4 @@
+file_no_mapping = SELECT file
+    FROM *
+    WHERE file_mapping == "(empty)"
+UPDATE file_no_mapping WITH shrinked: true

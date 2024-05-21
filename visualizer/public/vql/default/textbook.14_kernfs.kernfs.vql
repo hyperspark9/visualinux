@@ -1,0 +1,2 @@
+kobjects = SELECT kobject FROM *
+UPDATE kobjects WITH abst: parent

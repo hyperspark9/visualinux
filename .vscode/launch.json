@@ -1,0 +1,24 @@
+{
+    // https://code.visualstudio.com/docs/cpp/launch-json-reference
+    "version": "2.0.0",
+    "configurations": [
+        {
+            "name": "linux-debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "miDebuggerServerAddress": ":26001",
+            "program": "${workspaceFolder}/kernel/vmlinux",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            // "stopAtEntry": false, // seems useless
+            // "externalConsole": false, // seems useless
+            "logging": {
+                "engineLogging": false
+            },
+            "MIMode": "gdb",
+            "miDebuggerArgs": "-x ${workspaceFolder}/gdb/config.gdb",
+            "preLaunchTask": "gdb-startup"
+        }
+    ]
+}

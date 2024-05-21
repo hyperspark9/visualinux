@@ -1,0 +1,156 @@
+import lib.containers
+import lib.concurrency
+
+define VMArea as Box<vm_area_struct> [
+    Text<u64:x> vm_start, vm_end
+    Text<flag:vm_basic> vm_flags
+    Text<bool> is_writable: ${vma_is_writable(@this)}
+]
+
+define MapleNode as Box<maple_node> [
+    Text<enum:maple_type> type: @type
+    Text<u64:x> min: @ma_min
+    Text<u64:x> max: @ma_max
+    Shape slots: @slots
+    Shape pivots: @pivots
+] where {
+    is_leaf = ${mte_is_leaf(@this)}
+    node = ${mte_to_node(@this)}
+    type = ${mte_node_type(@this)}
+    last_ma_min = @ma_min
+    last_ma_max = @ma_max
+    slots = switch @type {
+    case ${maple_dense}:
+        Array("slots": @node.slot).forEach |item| {
+            ma_min = ${@last_ma_min + @index}
+            ma_max = @ma_min
+            yield Box [ Link "slot #{@index}" -> @slot ] where {
+                slot = VMArea(@item)
+            }
+        }
+    case ${maple_leaf_64}, ${maple_range_64}:
+        Array("slots": @node.mr64.slot).forEach |item| {
+            pivots = @node.mr64.pivot
+            yield Box [ Link "slot #{@index}" -> @slot_safe ] where {
+                slot_entry = @item
+                ma_min = ${ma_calc_min(@pivots, @index, @last_ma_min)}
+                ma_max = ${ma_calc_max(@pivots, @index, @last_ma_max)}
+                slot_is_safe = ${mt_slot_is_safe(@pivots, @index, @last_ma_max)}
+                slot_safe = switch @slot_is_safe {
+                case ${true}:
+                    switch @is_leaf {
+                        case ${true}:  VMArea(@slot_entry)
+                        case ${false}: MapleNode(maple_node: @slot_entry)
+                    }
+                case ${false}:
+                    NULL
+                }
+            }
+        }
+    case ${maple_arange_64}:
+        Array("slots": @node.ma64.slot).forEach |item| {
+            pivots = @node.ma64.pivot
+            yield Box [ Link "slot #{@index}" -> @slot_safe ] where {
+                slot_entry = @item
+                ma_min = ${ma_calc_min(@pivots, @index, @last_ma_min)}
+                ma_max = ${ma_calc_max(@pivots, @index, @last_ma_max)}
+                slot_is_safe = ${mt_slot_is_safe(@pivots, @index, @last_ma_max)}
+                slot_safe = switch @slot_is_safe {
+                case ${true}:
+                    switch @is_leaf {
+                        case ${true}:  VMArea(@slot_entry)
+                        case ${false}: MapleNode(maple_node: @slot_entry)
+                    }
+                case ${false}:
+                    NULL
+                }
+            }
+        }
+    otherwise:
+        Box [ Text unkown_type: @type ]
+    }
+    pivots = switch @type {
+    case ${maple_dense}: NULL
+    case ${maple_leaf_64}, ${maple_range_64}:
+        Array("pivots": @node.mr64.pivot).forEach |item| {
+            yield Box [ Text<u64:x> "pivot #{@index}": @item ]
+        }
+    case ${maple_arange_64}:
+        Array("pivots": @node.ma64.pivot).forEach |item| {
+            yield Box [ Text<u64:x> "pivot #{@index}": @item ]
+        }
+    }
+}
+
+define MapleTree as Box<maple_tree> [
+    Text<emoji:lock> ma_lock: ma_lock.rlock.raw_lock.locked
+    Link ma_root -> @ma_root
+    Text<flag:maple_tree> ma_flags
+    Text height: ${mt_height(@this)}
+    Text<bool> in_rcu: ${mt_in_rcu(@this)}
+    Text<bool> ext_lk: ${mt_external_lock(@this)}
+] with [
+    MapleNode: false
+] where {
+    ma_root_entry = @this.ma_root
+    type = ${mte_node_type(@ma_root_entry)}
+    ma_min = ${0}
+    ma_max = ${mt_node_max(@type)}
+    ma_root = switch ${xa_is_node(@ma_root_entry)} {
+    case ${true}:
+        MapleNode(maple_root: @this.ma_root)
+    case ${false}:
+        Box [ Text ma_root: @ma_root_entry ]
+    }
+}
+
+define TaskStruct as Box<task_struct> [
+    Text pid, comm
+    Text<string> state: ${get_task_state(@this)}
+    Link mm_mt -> @mm_mt
+] where {
+    mm_mt = MapleTree(@this.mm.mm_mt)
+}
+
+define RCUCallbackHead as Box<callback_head> [
+    Link next -> @next
+    Text<fptr> func
+] where {
+    next = switch @this.next.func {
+    case ${&mt_free_rcu}:
+        Box<maple_node.rcu>(@this.next) [
+            RCUCallbackHead rcu
+        ]
+    otherwise:
+        RCUCallbackHead(@this.next)
+    }
+}
+
+define RCUSegCBList as Box<rcu_segcblist> [
+    Link head -> @head
+    Text<flag> flags
+    Text len
+    TextArray seglen
+] where {
+    head = switch @this.head.func {
+    case ${&mt_free_rcu}:
+        Box<maple_node.rcu>(@this.head) [
+            RCUCallbackHead rcu
+        ]
+    otherwise:
+        RCUCallbackHead(@this.head)
+    }
+}
+
+define RCUData as Box<rcu_data> [
+    Text cpu
+    RCUSegCBList cblist
+]
+
+current_task = TaskStruct("task_current": ${per_cpu_current_task(current_cpu())})
+rcu_data = RCUData(${&per_cpu(rcu_data, 0)})
+
+view stackrot {
+    plot @current_task
+    plot @rcu_data
+}

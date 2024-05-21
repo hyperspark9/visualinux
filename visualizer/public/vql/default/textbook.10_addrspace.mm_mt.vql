@@ -1,0 +1,10 @@
+mm = SELECT mm_struct FROM *
+UPDATE mm WITH abst: mm_mt
+
+slots = SELECT maple_node.slots FROM *
+UPDATE slots WITH collapsed: true
+
+writable = SELECT vm_area_struct
+    FROM *
+    WHERE is_writable == true
+UPDATE writable WITH shrinked: true

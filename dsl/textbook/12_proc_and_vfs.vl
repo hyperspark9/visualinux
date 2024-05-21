@@ -1,0 +1,58 @@
+import lib.vfs
+
+define FDTable as Box<fdtable> [
+    Link fds -> @fds
+    Text max_fds
+    Text<u64:b> open_fds: ${*@this.open_fds}
+] where {
+    fds = Array("fds": ${cast_to_parray(@this.fd, file, NR_OPEN_DEFAULT)}).forEach |item| {
+        member = switch @item {
+        case ${NULL}:
+            NULL
+        otherwise:
+            Box [
+                Link "file #{@index}" -> @file
+            ] where {
+                file = File(@item)
+            }
+        }
+        yield @member
+    }
+}
+
+define FilesStruct as Box<files_struct> [
+    Text count: count.counter
+    Text next_fd
+    Link fdt -> @fdt
+    FDTable fdtab
+    Shape fd_array: @fd_array
+] where {
+    fdt = FDTable(@this.fdt)
+    fd_array = Array(@this.fd_array).forEach |item| {
+        member = switch @item {
+        case ${NULL}:
+            NULL
+        otherwise:
+            Box [
+                Link "file #{@index}" -> @file
+            ] where {
+                file = File(@item)
+            }
+        }
+        yield @member
+    }
+}
+
+define TaskVFS as Box<task_struct> {
+    :default [
+        Text pid, comm
+        Link files -> @files_struct
+    ]
+} where {
+    files_struct = FilesStruct(@this.files)
+}
+
+tf_current_task = TaskVFS("task_current": ${per_cpu_current_task(current_cpu())})
+view proc_vfs {
+    plot @tf_current_task
+}

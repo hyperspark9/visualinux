@@ -1,0 +1,101 @@
+import lib.containers
+import lib.concurrency
+
+define TaskPidHash as Box<task_struct> [
+    Text pid, comm
+    Text<string> state: ${get_task_state(@this)}
+]
+
+define Pid as Box<pid> [
+    Text nr: ${@this.numbers[0].nr}
+    Text level
+    Text refcount: @this.count.refs.counter
+    Shape tasks_pid: @tasks_pid
+ ] where {
+    // TODO. unsupported: .pid_links[i]
+    tasks_pid = Array(@this.tasks).forEach |item| {
+        yield Box(@item) [
+            Link tasks -> @tasks
+        ] where {
+            tasks = HList(@this).forEach |node| {
+                yield TaskPidHash<task_struct.pid_links>(@node)
+            }
+        }
+    }
+}
+
+define XANode1 as Box [
+    Text xa_shift:  @last_xa_shift
+    Text xa_index:  @last_xa_index
+    Text shift:     @node.shift
+    Text offset:    @node.offset
+    Text count:     @node.count
+    Text nr_values: @node.nr_values
+    Shape slots: @slots
+] where {
+    last_xa_index = @xa_index
+    last_xa_shift = @xa_shift
+    node = ${xa_to_node(@this)}
+    slots = Array(@node.slots).forEach |item| {
+        xa_entry = @item
+        xa_shift = @node.shift
+        slot = switch ${1} {
+            case ${xa_is_node(@xa_entry) && @xa_shift != 0}:
+                Box [ Link slot -> @slot ] where {
+                    xa_index = ${@last_xa_index + (@index << @xa_shift)}
+                    slot = XANode1(@xa_entry)
+                }
+            case ${xa_is_node(@xa_entry) && @xa_shift == 0}: Box(@xa_entry) [ Text entry_node:     @this ]
+            case ${xa_is_value(@xa_entry)}:                  Box(@xa_entry) [ Text entry_value:    ${xa_to_value(@this)} ]
+            case ${!xa_is_internal(@xa_entry)}:
+                Box [ Link pid -> @pid ] where {
+                    pid = Pid(@xa_entry)
+                }
+            case ${xa_is_retry(@xa_entry)}:                  Box(@xa_entry) [ Text entry_internal: ${xa_to_internal(@this)} ]
+            case ${xa_is_sibling(@xa_entry)}:                Box(@xa_entry) [ Text entry_sibling:  ${xa_to_sibling(@this)} ]
+            case ${xa_is_zero(@xa_entry)}:                   Box(@xa_entry) [ Text entry_zero:     ${xa_to_internal(@this)} ]
+            otherwise:                                       Box(@xa_entry) [ Text entry_unknown:  @this ]
+        }
+        yield @slot
+    }
+}
+
+define XArray1 as Box<xarray> [
+    Spinlock xa_lock
+    Text xa_flags
+    Link xa_head -> @xa_head
+] where {
+    xa_entry = @this.xa_head
+    xa_index = ${0}
+    xa_shift = ${xa_is_node(@xa_entry) ? xa_to_node(@xa_entry)->shift + XA_CHUNK_SHIFT : 0}
+    xa_head = switch ${1} {
+        case ${xa_is_node(@xa_entry) && @xa_shift != 0}: XANode1(@xa_entry)
+        case ${xa_is_node(@xa_entry) && @xa_shift == 0}: Box [ Text entry:          @xa_entry ]
+        case ${xa_is_value(@xa_entry)}:                  Box [ Text entry_value:    ${xa_to_value(@xa_entry)} ]
+        case ${!xa_is_internal(@xa_entry)}:              Box [ Text entry:          @xa_entry ]
+        case ${xa_is_retry(@xa_entry)}:                  Box [ Text entry_internal: ${xa_to_internal(@xa_entry)} ]
+        case ${xa_is_sibling(@xa_entry)}:                Box [ Text entry_sibling:  ${xa_to_sibling(@xa_entry)} ]
+        case ${xa_is_zero(@xa_entry)}:                   Box [ Text entry_zero:     ${xa_to_internal(@xa_entry)} ]
+        otherwise:                                       Box [ Text entry_unknown:  @xa_entry ]
+    }
+}
+
+define IDR as Box<idr> [
+    XArray1 idr_rt
+    Text idr_base
+    Text idr_next
+]
+
+define PidNamespace as Box<pid_namespace> [
+    IDR idr
+    Text pid_allocated
+    Text level
+    Link parent -> @parent
+] where {
+    parent = PidNamespace(@this.parent)
+}
+
+pid_ns = PidNamespace(${task_active_pid_ns(per_cpu(current_task, 0))})
+view pid_namespace {
+    plot @pid_ns
+}

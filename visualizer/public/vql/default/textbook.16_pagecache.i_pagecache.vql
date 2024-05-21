@@ -1,0 +1,2 @@
+i_pages = SELECT address_space->i_pages FROM *
+UPDATE i_pages WITH shrinked: true

@@ -1,0 +1,8 @@
+root = SELECT cfs_rq FROM *
+UPDATE root WITH abst: sched_tree
+
+rq = SELECT cfs_rq->tasks_timeline FROM *
+UPDATE rq WITH direction: vertical
+
+tasks = SELECT task_struct FROM *
+UPDATE tasks WITH abst: sched

@@ -1,0 +1,123 @@
+import lib.containers
+import lib.concurrency
+
+define VMArea as Box<vm_area_struct> [
+    Text<u64:x> vm_start, vm_end
+    Text<flag:vm_basic> vm_flags
+    Text vm_file
+    Text anon_vma
+]
+
+define MapleTreeNode as Box<maple_node> [
+    Text<enum:maple_type> type: @type
+    Text<u64:x> min: @ma_min
+    Text<u64:x> max: @ma_max
+    Shape slots: @slots
+    Shape pivots: @pivots
+] where {
+    is_leaf = ${mte_is_leaf(@this)}
+    node = ${mte_to_node(@this)}
+    type = ${mte_node_type(@this)}
+    last_ma_min = @ma_min
+    last_ma_max = @ma_max
+    slots = switch @type {
+    case ${maple_dense}:
+        Box [ Text dense: @type ]
+    case ${maple_leaf_64}, ${maple_range_64}:
+        Array(@node.mr64.slot).forEach |item| {
+            pivots = ${@node.mr64.pivot}
+            yield Box(@item) [ Link slot -> @slot_safe ] where {
+                slot_entry = @this
+                slot_length = ${sizeof(@pivots) / sizeof(void *)}
+                ma_min = ${@index > 0 ? @pivots[@index - 1] + 1 : @last_ma_min}
+                ma_max = ${@index < @slot_length - 1 ? @pivots[@index] : @last_ma_max}
+                slot_safety_check_1 = ${@index > 0 && @pivots[@index - 1] == @last_ma_max}
+                slot_safety_check_2 = ${@index > 0 && @pivots[@index - 1] == 0}
+                slot_safety_check_3 = ${@index > 0 && @index < @slot_length - 1 && @pivots[@index] == 0}
+                slot_safety_check   = ${@slot_safety_check_1 || @slot_safety_check_2 || @slot_safety_check_3}
+                slot_safe = switch ${@slot_safety_check * 10 + @is_leaf} {
+                case ${0}: MapleTreeNode(@this)
+                case ${1}: VMArea(@this)
+                otherwise: NULL
+                }
+            }
+        }
+    case ${maple_arange_64}:
+        Array(@node.ma64.slot).forEach |item| {
+            pivots = ${@node.ma64.pivot}
+            yield Box(@item) [ Link slot -> @slot_safe ] where {
+                slot_entry = @this
+                slot_length = ${sizeof(@pivots) / sizeof(void *)}
+                ma_min = ${@index > 0 ? @pivots[@index - 1] + 1 : @last_ma_min}
+                ma_max = ${@index < @slot_length - 1 ? @pivots[@index] : @last_ma_max}
+                slot_safety_check_1 = ${@index > 0 && @pivots[@index - 1] == @last_ma_max}
+                slot_safety_check_2 = ${@index > 0 && @pivots[@index - 1] == 0}
+                slot_safety_check_3 = ${@index > 0 && @index < @slot_length - 1 && @pivots[@index] == 0}
+                slot_safety_check   = ${@slot_safety_check_1 || @slot_safety_check_2 || @slot_safety_check_3}
+                slot_safe = switch ${@slot_safety_check * 10 + @is_leaf} {
+                case ${0}: MapleTreeNode(@slot_entry)
+                case ${1}: VMArea(@this)
+                otherwise: NULL
+                }
+            }
+        }
+    otherwise:
+        Box [ Text unkown_type: @type ]
+    }
+    pivots = switch @type {
+    case ${maple_dense}: NULL
+    case ${maple_leaf_64}, ${maple_range_64}:
+        Array(@node.mr64.pivot).forEach |item| {
+            yield Box [ Text<u64:x> pivot: @item ]
+        }
+    case ${maple_arange_64}:
+        Array(@node.ma64.pivot).forEach |item| {
+            yield Box [ Text<u64:x> pivot: @item ]
+        }
+    }
+}
+
+define MapleTree as Box<maple_tree> [
+    Link ma_root -> @ma_root
+    Text<flag> ma_flags
+    Text height: ${mt_height(@this)}
+    Text<bool> in_rcu: ${mt_in_rcu(@this)}
+    Text<bool> ext_lk: ${mt_external_lock(@this)}
+] where {
+    ma_root_entry = @this.ma_root
+    type = ${(int)mte_node_type(@ma_root_entry)}
+    ma_min = ${0}
+    ma_max = ${mt_max[@type]}
+    ma_root = switch ${!xa_is_node(@ma_root_entry)} {
+    case ${true}:
+        Box [ Text ma_root: @ma_root_entry ]
+    case ${false}:
+        MapleTreeNode(@this.ma_root)
+    }
+}
+
+define MMStruct as Box<mm_struct> [
+    Text<u64:x> mmap_base
+    Text mm_count: mm_count.counter
+    Text map_count
+    Link mm_mt -> @mm_mt
+] where {
+    mm_mt = MapleTree(@this.mm_mt)
+}
+
+define TaskMM as Box<task_struct> [
+    Text pid, comm
+    Text<string> state: ${get_task_state(@this)}
+    // Link parent -> @parent
+    Link mm -> @mm
+    Link active_mm -> @active_mm
+] where {
+    // parent = TaskMM(@this.parent)
+    mm = MMStruct(@this.mm)
+    active_mm = MMStruct(@this.active_mm)
+}
+
+tm_current_task = TaskMM(${per_cpu(current_task, 0)})
+view mm_mt {
+    plot @tm_current_task
+}

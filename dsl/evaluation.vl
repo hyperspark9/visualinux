@@ -1,0 +1,23 @@
+import textbook.01_process_parenthood
+import textbook.02_pidhash
+import textbook.03_irq_desc
+import textbook.04_workqueue
+import textbook.05_timing
+import textbook.06_scheduling
+import textbook.07_buddy_system
+import textbook.08-09_slab
+import textbook.10_addrspace
+import textbook.11_signals
+import textbook.12_proc_and_vfs
+import textbook.13_fd_array
+// import textbook.14_kernfs
+import textbook.15_bio
+import textbook.16_pagecache
+import textbook.17_file_mapping
+import textbook.18_anon_rev
+import textbook.19_swap_area
+import textbook.20_ipc_ns
+import textbook.21_socket
+
+// import case-studies.stackrot
+// import case-studies.dirty-pipe

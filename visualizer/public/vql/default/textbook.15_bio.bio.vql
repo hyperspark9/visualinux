@@ -1,0 +1,7 @@
+super_blocks = SELECT List FROM *
+UPDATE super_blocks WITH direction: vertical
+
+sb_no_bio = SELECT super_block
+    FROM *
+    WHERE s_bdev == NULL
+UPDATE sb_no_bio WITH shrinked: true
