@@ -1,0 +1,4 @@
+unrelated_vmas = SELECT vm_area_struct
+    FROM * AS vma
+    WHERE vma != 0xffff888005b05788
+UPDATE unrelated_vmas WITH collapsed: true

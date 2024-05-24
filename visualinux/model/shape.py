@@ -427,12 +427,13 @@ class Container(Shape):
 
 class ContainerConv:
 
-    def __init__(self, label: str, source: Container, target_type: Type[Container],
+    def __init__(self, label: str, source: Box | Container, target_type: Type[Container], distill: str,
                  parent: 'NotPrimitive | None' = None) -> None:
         self.label = label
         self.source = source
         self.target_type = target_type
         self.type = None
+        self.distill = distill
         self.parent = parent
         self.scope = None
 
@@ -446,35 +447,65 @@ class ContainerConv:
         return padding(depth) + self.format_string_head()
 
     def format_string_head(self) -> str:
-        return f'{self.label}: {self.target_type.__name__}.genFrom({self.source!s})'
+        return f'{self.label}: {self.target_type.__name__}.convFrom({self.source!s})'
 
     @property
     def name(self) -> str:
         return self.target_type.__name__
 
+    def is_member_distilled(self, pool: Pool, member_key: str | None) -> bool:
+        if vl_debug_on(): printd(f'is_member_distilled {member_key = }')
+        if not self.distill:
+            return True
+        box = pool.find(member_key)
+        res = isinstance(box, entity.Box) and box.type == self.distill
+        if vl_debug_on(): printd(f'is_member_distilled {member_key = } => {res}')
+        return res
+
     def evaluate_on(self, pool: Pool, iroot: KValue | None = None, distillers: set[Distiller] | None = None) -> entity.ContainerConv:
-        if vl_debug_on(): printd(f'Conv {self!s} evaluate_on {iroot = !s}')
+        if vl_debug_on(): printd(f'Conv {self.format_string_head()} evaluate_on {iroot = !s}')
 
         ent_source = self.source.evaluate_on(pool, iroot, distillers)
-        if vl_debug_on(): printd(f'Conv {self!s} => {ent_source.key = !s}')
+        if vl_debug_on(): printd(f'Conv {self.format_string_head()} => {ent_source.key = !s}')
 
-        if not self.target_type.__name__ == 'Array':
-            raise fuck_exc(AssertionError, f'now container_conv only support Array but {self.target_type = !s}')
+        if not self.target_type.__name__ in ['Array', 'UnorderedSet']:
+            raise fuck_exc(AssertionError, f'currently container_conv only support Array and UnorderedSet but {self.target_type = !s}')
 
         ent_converted = entity.ContainerConv(self, ent_source)
         if ent_existed := pool.find_container_conv(ent_converted.key):
             return ent_existed
 
-        for member in ent_source.members:
-            # if filtered:
-                ent_converted.add_member(member.key)
-        if vl_debug_on(): printd(f'Conv {self!s} => {ent_converted = !s}')
+        if isinstance(ent_source, entity.Box):
+            searched: set[str] = set()
+            def search_reachable(ent: entity.NotPrimitive | None, distill: str | None):
+                if ent is None or ent.key in searched:
+                    return
+                if vl_debug_on(): printd(f'  search_reachable {ent.key = }, {distill = }')
+                searched.add(ent.key)
+                if isinstance(ent, entity.Container | entity.ContainerConv):
+                    for member in ent.members:
+                        search_reachable(pool.find(member.key), distill)
+                else:
+                    if self.is_member_distilled(pool, ent.key):
+                        ent_converted.add_member(ent.key)
+                    for abst in ent.absts.values():
+                        for member in abst.members.values():
+                            if isinstance(member, entity.Link):
+                                search_reachable(pool.find(member.target_key), distill)
+                            elif isinstance(member, entity.BoxMember):
+                                search_reachable(pool.find(member.object_key), distill)
+            search_reachable(ent_source, self.distill)
+        else: # entity.Container
+            for member in ent_source.members:
+                if self.is_member_distilled(pool, member.key):
+                    ent_converted.add_member(member.key)
+            if vl_debug_on(): printd(f'Conv {self!s} => {ent_converted = !s}')
 
         pool.add_container(ent_converted)
         return ent_converted
 
     def clone_to(self, parent: 'NotPrimitive') -> 'ContainerConv':
-        new_conv = ContainerConv(self.label, self.source.clone_to(parent), self.target_type, parent)
+        new_conv = ContainerConv(self.label, self.source.clone_to(parent), self.target_type, self.distill, parent)
         return new_conv
 
 @dataclass

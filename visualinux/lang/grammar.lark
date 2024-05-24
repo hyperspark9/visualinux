@@ -247,9 +247,9 @@ THIS: "this"
 
 //// container: generate from
 
-container_conversion: shapename container_gen_from //[container_sort]
+container_conversion: shapename container_distill // container_sort
 
-container_gen_from: ".genFrom" "(" access_variable_as_shape ")"
+container_distill: ".convFrom" "(" access_variable_as_shape ["," shapename] ")"
 container_sort: ".sort" "(" sorter ")"
 sorter: "undefined"
 

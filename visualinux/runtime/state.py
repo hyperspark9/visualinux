@@ -27,21 +27,27 @@ class Pool:
         if ent.key in self.__pool_container:
             raise fuck_exc(AssertionError, f'duplicated key {ent.key} in pool.containers: {ent = !s}, existed: {self.__pool_container[ent.key]!s}')
 
-    def find(self, key: str) -> entity.NotPrimitive | None:
+    def find(self, key: str | None) -> entity.NotPrimitive | None:
+        if key is None:
+            return None
         if key in self.__pool_box:
             return self.__pool_box[key]
         if key in self.__pool_container:
             return self.__pool_container[key]
         return None
 
-    def find_box(self, key: str) -> entity.Box | None:
+    def find_box(self, key: str | None) -> entity.Box | None:
+        if key is None:
+            return None
         if key in self.__pool_container:
             raise fuck_exc(AssertionError, f'try to find_box {key = } but found in {self.__pool_container = !s}')
         if key in self.__pool_box:
             return self.__pool_box[key]
         return None
 
-    def find_container(self, key: str) -> entity.Container | None:
+    def find_container(self, key: str | None) -> entity.Container | None:
+        if key is None:
+            return None
         if key in self.__pool_box:
             raise fuck_exc(AssertionError, f'try to find_container {key = } but found in {self.__pool_box = !s}')
         if key in self.__pool_container:

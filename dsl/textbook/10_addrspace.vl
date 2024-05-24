@@ -40,7 +40,7 @@ define MapleNode as Box<maple_node> [
             ma_min = ${@last_ma_min + @index}
             ma_max = @ma_min
             yield Box [ Link "slot #{@index}" -> @slot ] where {
-                slot = VMArea(@item)
+                slot = VMArea("vm_area_struct #{@index}": @item)
             }
         }
     case ${maple_leaf_64}, ${maple_range_64}:
@@ -54,7 +54,7 @@ define MapleNode as Box<maple_node> [
                 slot_safe = switch @slot_is_safe {
                 case ${true}:
                     switch @is_leaf {
-                        case ${true}:  VMArea(@slot_entry)
+                        case ${true}:  VMArea("vm_area_struct #{@index}": @slot_entry)
                         case ${false}: MapleNode(maple_node: @slot_entry)
                     }
                 case ${false}:
@@ -73,7 +73,7 @@ define MapleNode as Box<maple_node> [
                 slot_safe = switch @slot_is_safe {
                 case ${true}:
                     switch @is_leaf {
-                        case ${true}:  VMArea(@slot_entry)
+                        case ${true}:  VMArea("vm_area_struct #{@index}": @slot_entry)
                         case ${false}: MapleNode(maple_node: @slot_entry)
                     }
                 case ${false}:
@@ -126,25 +126,22 @@ define MMStruct as Box<mm_struct> {
         Text map_count
     ]
     :default => :mm_mt [
-        Link mm_mt -> @mm_mt
+        Link mt -> @mm_mt
     ]
-    // :default => :as [
-    //     Link as -> @as
-    // ]
+    :default => :as [
+        Link as -> @mm_as
+    ]
 } where {
     mm_mt = MapleTree(@this.mm_mt)
-    // as = Array.selectFrom(@mm_mt, VMArea)
+    mm_as = Array.convFrom(@mm_mt, vm_area_struct)
 }
 
 define TaskMM as Box<task_struct> [
     Text pid, comm
     Text<string> state: ${get_task_state(@this)}
-    // Link parent -> @parent
-    Link mm_mt -> @mm_mt
+    Link mm -> @mm
 ] where {
-    // parent = TaskMM(@this.parent)
-    // mm = MMStruct(@this.mm)
-    mm_mt = MapleTree(@this.mm.mm_mt)
+    mm = MMStruct(@this.mm)
 }
 
 tm_current_task = TaskMM("task_current": ${per_cpu_current_task(current_cpu())})

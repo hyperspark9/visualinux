@@ -110,11 +110,11 @@ export class ViewDB {
         // console.log('  src;', exprToString(stmt.expr), results.data({removeMeta: true}));
         if (stmt.query != null) {
             if (results.collection == this.objects) {
-                let query = this.transformQueryDesc(stmt.query, false, scope);
+                let query = this.transformQueryDesc(stmt.query, stmt.srcAlias, false, scope);
                 // console.log('intpSelect query:', query);
                 results = results.find(query);
             } else {
-                let query = this.transformQueryDesc(stmt.query, true, scope);
+                let query = this.transformQueryDesc(stmt.query, stmt.srcAlias, true, scope);
                 // console.log('intpSelect where:', query);
                 let fn = (data: any) => {
                     if (data['$class'] != 'link') return false;
@@ -223,17 +223,18 @@ export class ViewDB {
         // console.log('=>', res.filteredrows, res);
         return res;
     }
-    private transformQueryDesc(data: vql.QueryDesc | vql.Filter | null, useWhere: boolean, scope: Scope) {
+    private transformQueryDesc(data: vql.QueryDesc | vql.Filter | null, alias: string | null, 
+            useWhere: boolean, scope: Scope) {
         if (data == null) {
             return data;
         }
         if (isFilter(data)) {
-            return this.transformFilter(data, useWhere, scope);
+            return this.transformFilter(data, alias, useWhere, scope);
         }
         // console.log('transformQueryDesc', data, useWhere);
         // recursion
-        let queryLeft:  any = this.transformQueryDesc(data.lhs, useWhere, scope);
-        let queryRight: any = this.transformQueryDesc(data.rhs, useWhere, scope);
+        let queryLeft:  any = this.transformQueryDesc(data.lhs, alias, useWhere, scope);
+        let queryRight: any = this.transformQueryDesc(data.rhs, alias, useWhere, scope);
         // construction
         let query: any;
         if (useWhere) {
@@ -247,7 +248,8 @@ export class ViewDB {
         // return
         return query;
     }
-    private transformFilter(data: vql.Filter, useWhere: boolean, scope: Scope) {
+    private transformFilter(data: vql.Filter, alias: string | null,
+            useWhere: boolean, scope: Scope) {
         // console.log('transformFilter', data);
         if (useWhere) {
             return `targetData['${data.lhs.head.value}'] ${data.opt.value} ${data.rhs.value}`;
@@ -270,7 +272,11 @@ export class ViewDB {
             comparator['$' + data.opt.type] = value;
         }
         let filter: any = {};
-        filter[data.lhs.head.value] = comparator;
+        if (data.lhs.head.value == alias) {
+            filter['$addr'] = comparator;
+        } else {
+            filter[data.lhs.head.value] = comparator;
+        }
         return filter;
     }
     private calcReachable(set: Resultset<any>): Resultset<any> {

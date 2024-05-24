@@ -30,7 +30,7 @@ define RunqueueCFS as Box<cfs_rq> {
     sched_tree = RBTree<cfs_rq.tasks_timeline>(@this.tasks_timeline).forEach |node| {
         yield TaskSched<task_struct.se.run_node>(@node)
     }
-    sched_queue = Array.genFrom(@sched_tree)
+    sched_queue = Array.convFrom(@sched_tree)
 }
 
 view runqueue_cfs {

@@ -19,5 +19,5 @@ import textbook.19_swap_area
 import textbook.20_ipc_ns
 import textbook.21_socket
 
-// import case-studies.stackrot
-// import case-studies.dirty-pipe
+// import cases.stackrot
+// import cases.dirty-pipe

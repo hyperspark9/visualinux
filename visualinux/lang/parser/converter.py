@@ -466,7 +466,8 @@ class Converter:
         name = serialize(child_as_tree(node, 0))
         node_root = child_as_tree(node, 1)
         root = self.get_term_as_shape_from(child_as_tree(node_root, 0))
-        return ContainerConvDef(name, root)
+        distill = serialize(child_as_tree(node_root, 1))
+        return ContainerConvDef(name, root, distill)
 
     # ======================================================================
     # handle the distiller

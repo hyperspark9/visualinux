@@ -25,7 +25,7 @@ define MapleNode as Box<maple_node> [
             ma_min = ${@last_ma_min + @index}
             ma_max = @ma_min
             yield Box [ Link "slot #{@index}" -> @slot ] where {
-                slot = VMArea(@item)
+                slot = VMArea("vm_area_struct #{@index}": @item)
             }
         }
     case ${maple_leaf_64}, ${maple_range_64}:
@@ -39,7 +39,7 @@ define MapleNode as Box<maple_node> [
                 slot_safe = switch @slot_is_safe {
                 case ${true}:
                     switch @is_leaf {
-                        case ${true}:  VMArea(@slot_entry)
+                        case ${true}:  VMArea("vm_area_struct #{@index}": @slot_entry)
                         case ${false}: MapleNode(maple_node: @slot_entry)
                     }
                 case ${false}:
@@ -58,7 +58,7 @@ define MapleNode as Box<maple_node> [
                 slot_safe = switch @slot_is_safe {
                 case ${true}:
                     switch @is_leaf {
-                        case ${true}:  VMArea(@slot_entry)
+                        case ${true}:  VMArea("vm_area_struct #{@index}": @slot_entry)
                         case ${false}: MapleNode(maple_node: @slot_entry)
                     }
                 case ${false}:
@@ -104,12 +104,29 @@ define MapleTree as Box<maple_tree> [
     }
 }
 
-define TaskStruct as Box<task_struct> [
+define MMStruct as Box<mm_struct> {
+    :default [
+        Text<u64:x> mmap_base
+        Text mm_count: mm_count.counter
+        Text map_count
+    ]
+    :default => :mm_mt [
+        Link mt -> @mm_mt
+    ]
+    :default => :as [
+        Link as -> @mm_as
+    ]
+} where {
+    mm_mt = MapleTree(@this.mm_mt)
+    mm_as = Array.convFrom(@mm_mt, vm_area_struct)
+}
+
+define TaskMM as Box<task_struct> [
     Text pid, comm
     Text<string> state: ${get_task_state(@this)}
-    Link mm_mt -> @mm_mt
+    Link mm -> @mm
 ] where {
-    mm_mt = MapleTree(@this.mm.mm_mt)
+    mm = MMStruct(@this.mm)
 }
 
 define RCUCallbackHead as Box<callback_head> [
@@ -118,7 +135,7 @@ define RCUCallbackHead as Box<callback_head> [
 ] where {
     next = switch @this.next.func {
     case ${&mt_free_rcu}:
-        Box<maple_node.rcu>(@this.next) [
+        Box<maple_node.rcu>("maple_node": @this.next) [
             RCUCallbackHead rcu
         ]
     otherwise:
@@ -134,7 +151,7 @@ define RCUSegCBList as Box<rcu_segcblist> [
 ] where {
     head = switch @this.head.func {
     case ${&mt_free_rcu}:
-        Box<maple_node.rcu>(@this.head) [
+        Box<maple_node.rcu>("maple_node": @this.head) [
             RCUCallbackHead rcu
         ]
     otherwise:
@@ -147,7 +164,7 @@ define RCUData as Box<rcu_data> [
     RCUSegCBList cblist
 ]
 
-current_task = TaskStruct("task_current": ${per_cpu_current_task(current_cpu())})
+current_task = TaskMM("task_current": ${per_cpu_current_task(current_cpu())})
 rcu_data = RCUData(${&per_cpu(rcu_data, 0)})
 
 view stackrot {

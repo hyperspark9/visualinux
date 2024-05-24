@@ -335,12 +335,13 @@ class ContainerConvDef:
 
     name: str
     root: TermAsShape
+    distill: str
 
     def __str__(self) -> str:
         return self.format_string()
 
     def format_string(self, depth: int = 0) -> str:
-        return padding(depth) + f'{self.name}.genFrom({self.root!s})'
+        return padding(depth) + f'{self.name}.convFrom({self.root!s})'
 
 # ======================================================================
 # switch-case rhs

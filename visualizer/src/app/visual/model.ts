@@ -243,23 +243,11 @@ class ModelDataGenerator {
         }
     }
     private creatContainerConversion(conv: ContainerConv, shouldShrink: boolean = false) {
-        // invariant check
-        if (!(conv.source in this.subview.pool.containers)) {
-            console.log(`ERR: creat_conv: ${conv.source} not in pool.containers`);
-            return;
-        }
-        const source = this.subview.pool.containers[conv.source];
-        if (isContainerConv(source)) {
-            console.log(`ERR: creat_conv: ${conv.source} is a Conv too`);
-            return;
-        }
+        // init
         const key = conv.key;
         shouldShrink = shouldShrink || this.isShrinked(key);
-        console.log('container_conv', key);
-        // init
         const addr = key.split(':', 2)[0];
         const type = key.split(':', 2)[1];
-        const attrs = this.viewStorage.getAttrs(this.subviewName, key);
         this.modelData.nodes[key] = this.genGroupData(key, conv.parent, `${conv.depth}:${type}`, addr, shouldShrink);
         // parse members
         for (let member of conv.members) {

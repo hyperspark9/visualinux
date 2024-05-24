@@ -2,7 +2,7 @@ import * as go from "gojs";
 var $ = go.GraphObject.make;
 
 import { styleset } from "./styleset";
-import { getGroupTemplateList, getGroupTemplateTree } from "./containers";
+import { getGroupTemplateList, getGroupTemplateTree, getGroupTemplateSet } from "./containers";
 import { updateExpansion } from "./buttons";
 
 const defaultMaxLevel = 7;
@@ -16,6 +16,10 @@ export function getGroupTemplateMap(maxLevel: number = defaultMaxLevel) {
         tmap.add(`${level}:HList`,  getGroupTemplateList(level));
         tmap.add(`${level}:RBTree`, getGroupTemplateTree(level));
         tmap.add(`${level}:XArray`, getGroupTemplate(level));
+        tmap.add(`${level}:UnorderedSet`, getGroupTemplateSet(level));
+        //
+        tmap.add(`${level}:Array(cloned)`, getGroupTemplate(level));
+        tmap.add(`${level}:UnorderedSet(cloned)`, getGroupTemplateSet(level));
     }
     return tmap;
 }

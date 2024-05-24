@@ -1,13 +1,6 @@
---ll = SELECT 0xffff888003cca1c8:XArray FROM *
---UPDATE ll WITH shrinked: true
-
 file_pgc = SELECT file->pagecache FROM *
 file_pgs = SELECT page FROM REACHABLE(file_pgc)
---UPDATE file_pgs WITH shrinked: true
 
 pipe_buf = SELECT pipe_inode_info->bufs FROM *
 pipe_pgs = SELECT page FROM REACHABLE(pipe_buf)
 UPDATE pipe_pgs \ file_pgs WITH shrinked: true
-
---links = SELECT file->pagecache->[Box].[Link] FROM *
---UPDATE links WITH shrinked: true

@@ -136,6 +136,10 @@ class Box(RuntimeShape):
     def key(self) -> str:
         return self.root.json_data_key
 
+    @property
+    def type(self) -> str:
+        return self.root.gtype.tag
+
     def add_member(self, abst: str, label: str, ent: 'RuntimePrimitive | Box') -> None:
         if abst not in self.absts:
             raise fuck_exc(KeyError, f'{abst = } not found in box {self!s}')
@@ -164,7 +168,7 @@ class Box(RuntimeShape):
     def to_json(self) -> dict:
         return {
             'key' : self.root.json_data_key,
-            'type': self.root.gtype.tag,
+            'type': self.type,
             'addr': hex(self.root.address),
             'label': self.label,
             'absts': OrderedDict((name, abst.to_json()) for name, abst in self.absts.items()),
@@ -225,7 +229,7 @@ class Container(RuntimeShape):
 
 class ContainerConv(JSONRepr):
 
-    def __init__(self, model: 'shape.ContainerConv', source: Container) -> None:
+    def __init__(self, model: 'shape.ContainerConv', source: Box | Container) -> None:
         self.model = model
         self.source = source
         self.members: list[ContainerMember] = []

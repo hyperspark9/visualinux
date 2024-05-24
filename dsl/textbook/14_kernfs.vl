@@ -23,7 +23,7 @@ define kernfs_Node as Box<kernfs_node> [
     children = RBTree<kernfs_node.dir.children>(@this.dir.children).forEach |node| {
         yield kernfs_Node<kernfs_node.rb>(@node)
     }
-    children_list = Array.genFrom(@children)
+    children_list = UnorderedSet.convFrom(@children)
 }
 
 define kernfs_SyscallOps as Box<kernfs_syscall_ops> [

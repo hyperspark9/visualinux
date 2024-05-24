@@ -154,9 +154,9 @@ class Translator:
             if vl_debug_on(): printd(f'[DEBUG] interpret_container_conv {varname=} {shapedef=!s}')
             container_type = get_basic_container_shape(shapedef.name)
             source = self.interpret_term_as_shape(shapedef.root, parent_shape.scope)
-            if not isinstance(source, Container):
-                raise fuck_exc(AssertionError, f'container_conv source must be container but {source = !s}')
-            container_conv = ContainerConv(varname, source, container_type, parent=parent_shape)
+            if not isinstance(source, Box | Container):
+                raise fuck_exc(AssertionError, f'container_conv source must be box/container but {source = !s}')
+            container_conv = ContainerConv(varname, source, container_type, shapedef.distill, parent=parent_shape)
             if vl_debug_on(): printd(f'[DEBUG] interpret_container_conv {container_conv=!s}')
             parent_shape.scope[varname] = container_conv
             return container_conv
