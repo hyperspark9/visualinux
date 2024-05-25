@@ -6,6 +6,11 @@ Visualinux is a debugging framework that can simplify the program state of Linux
 This repo provides the source code of our prototype implementation.
 We also provide an online environment to reproduce the evaluation results of our paper submission (the online site will come soon).
 
+## Online Evaluatioon
+
+We have provided an online server for online artifact evaluation; the online site will come soon.
+The following sections will introduce how to deploy Visualinux on your debugging environment.
+
 ## Requirements
 
 Visualinux is fully compatible to gdb and it is available as long as one can debug the Linux kernel through gdb with python extension enabled.
