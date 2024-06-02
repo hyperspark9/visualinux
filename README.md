@@ -8,7 +8,7 @@ We also provide an online environment to reproduce the evaluation results of our
 
 |   |   |   |
 |---|---|---|
-| ![fig-01](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png) | ![fig-01](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png) | ![fig-01](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png) |
+| ![fig-01](docs/assets/01-process_tree.png) | ![fig-01](docs/assets/01-process_tree.png) | ![fig-01](docs/assets/01-process_tree.png) |
 
 ## Deployment
 
