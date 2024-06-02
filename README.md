@@ -7,15 +7,15 @@ This repo provides the source code of our prototype implementation.
 We also provide an online environment to reproduce the evaluation results of our paper submission.
 
 <div>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/01-process_tree.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/02-workqueue.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/03-runqueue.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/04-addrspace.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/05-proc_vfs.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/06-socket.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/07-signals.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/08-buddy_system.png"/>
-    <img style="width: 32%; border: 1px black solid" src="docs/assets/09-kmem_cache.png"/>
+    <a href="docs/assets/01-process_tree.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/01-process_tree.png"/></a>
+    <a href="docs/assets/02-workqueue.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/02-workqueue.png"/></a>
+    <a href="docs/assets/03-runqueue.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/03-runqueue.png"/></a>
+    <a href="docs/assets/04-addrspace.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/04-addrspace.png"/></a>
+    <a href="docs/assets/05-proc_vfs.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/05-proc_vfs.png"/></a>
+    <a href="docs/assets/06-socket.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/06-socket.png"/></a>
+    <a href="docs/assets/07-signals.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/07-signals.png"/></a>
+    <a href="docs/assets/08-buddy_system.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/08-buddy_system.png"/></a>
+    <a href="docs/assets/09-kmem_cache.png"><img style="width: 32%; border: 1px black solid" src="docs/assets/09-kmem_cache.png"/></a>
 </div>
 
 ## Deployment
