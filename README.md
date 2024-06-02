@@ -6,9 +6,17 @@ Visualinux is a debugging framework that can simplify the program state of Linux
 This repo provides the source code of our prototype implementation.
 We also provide an online environment to reproduce the evaluation results of our paper submission.
 
+<style>
+td img {
+    width: 100%;
+}
+</style>
+
 |   |   |   |
 |---|---|---|
-| ![fig-01](docs/assets/01-process_tree.png) | ![fig-01](docs/assets/01-process_tree.png) | ![fig-01](docs/assets/01-process_tree.png) |
+| ![fig-01](docs/assets/01-process_tree.png) | ![fig-02](docs/assets/02-workqueue.png) | ![fig-03](docs/assets/03-runqueue.png) |
+| ![fig-04](docs/assets/04-addrspace.png) | ![fig-05](docs/assets/05-proc_vfs.png) | ![fig-06](docs/assets/06-socket.png) |
+| ![fig-07](docs/assets/07-signals.png) | ![fig-08](docs/assets/08-buddy_system.png) | ![fig-09](docs/assets/09-kmem_cache.png) |
 
 ## Deployment
 
