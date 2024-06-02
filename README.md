@@ -6,9 +6,9 @@ Visualinux is a debugging framework that can simplify the program state of Linux
 This repo provides the source code of our prototype implementation.
 We also provide an online environment to reproduce the evaluation results of our paper submission.
 
-![fig-01](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png){ width=50% }
-
-![fig-02](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png){ width=50% }
+|   |   |   |
+|---|---|---|
+| ![fig-01](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png) | ![fig-01](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png) | ![fig-01](https://github.com/hyperspark9/visualinux/blob/master/docs/readme-images/01-process_tree.png) |
 
 ## Deployment
 
