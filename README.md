@@ -10,20 +10,20 @@ We also provide an online environment to reproduce the evaluation results of our
 
 ### Online Evaluation
 
-We have provided an online server for online artifact evaluation:
+We have prepared an online site for a quick experience of Visualinux. You can painlessly enter a Linux kernel gdb debugging environment and check out the effect of our visualized debugger. Note that the online site only allows one connection at a time.
 
 ```
-IP:     47.100.130.248
-user:   visualinux
-passwd: eurosys@25
+http://47.100.130.248
 ```
 
-You can also deploy Visualinux on your own debugging environment.
+*Double-blind review: We guarantee that there is no logging activity in the online site and we do not track any visitor's IP address. You can also use a proxy to further hide your identity.*
+
+You can deploy Visualinux in your own debugging environment. Check the following subsections for details.
 
 ### Requirements
 
 Visualinux is fully compatible to gdb and it is available as long as one can debug the Linux kernel through gdb with python extension enabled.
-The tool has been tested on Ubuntu 22.04 and Python 3.10.12, with both gdb (QEMU) and kgdb (rpi-400) targeting on Linux kernel 5.15 and 6.1.
+The tool has been well-tested on Ubuntu 22.04 and Python 3.10.12, with both gdb (QEMU) and kgdb (rpi-400) targeting on Linux kernel 5.15 and 6.1.
 
 ### Fresh Build
 
@@ -37,19 +37,23 @@ cp ./scripts/kernel.config/linux-6.1.25.config ./kernel/.config
 make build
 ```
 
-These scripts are not necessary to use; you can prepare a debugging environment for Linux kernel by yourself, with the following requirements satisfied:
+These scripts are not mandatory to use; you can prepare a Linux kernel debugging environment on your own and meet the following requirements:
+
+- An available gdb debugging environment for Linux kernel (e.g. the kernel should be compiled with debug info and booted with KASLR=off, etc.).
+
+- Gdb with python extension enabled (which is the default configuration of gdb).
 
 - Python 3.10+ with Python packages listed in `scripts/pu-requirements.txt` installed.
 
 - Node.js 18.20+ with npm package requirements in `visualizer/` installed.
 
-Make sure your gdb is able to auto-load gdb scripts and extensions (`scripts/config.gdb`, `visualinux-gdb.py` and `kernel/vmlinux-gdb.py`), e.g. check if they are in your gdb auto-load safe-path. Otherwise you have to manually load these scripts in each new debugging session.
+Moreover, please make sure your gdb is able to auto-load gdb scripts and extensions (`scripts/config.gdb`, `visualinux-gdb.py` and `kernel/vmlinux-gdb.py`), e.g. check if they are in your gdb auto-load safe-path. Otherwise you have to manually load these scripts in each new debugging session.
 
 Also note that the kernel should be compiled with debug info enabled, and compiled/runned with KASLR disabled.
 
 ## Run
 
-### start a debug session
+### Start a Debug Session
 
 This repo provides vscode configuration files, so you can open the vscode workspace in `.vscode/visualinux.code-workspace` and launch a gdb-qemu debugging task directly.
 
@@ -60,7 +64,7 @@ make start    # in terminal 1
 make attach   # in terminal 2
 ```
 
-### start the visualizer
+### Start the Visualizer
 
 In another terminal:
 
@@ -77,9 +81,9 @@ The visualizer polls the latest extracted data and updates the displayed object 
 
 ## Reproduce the Evaluation
 
-If you use our init image and workload (see `workload/init.sh`), you can set a breakpoint on the syscall `getsid()` (at `kernel/sys.c:1168` in Linux 6.1.25) and run the executable file `/workload/test/summation`.
+If you use our init image and workload (see `workload/init.sh`), you can set a breakpoint on the function `security_task_getsid` and run the executable file `/workload/test/summation`.
 When the kernel execution first pauses, execute `vl-update evaluation` to reproduce the textbook evaluation results of our paper submission.
 
 The first time of object graph extraction might be slow since gdb needs to cache several statical information in a cold start.
 
-Note that the evaluation `dsl/textbook/14_kernfs.vl` requires a short hacking into Linux kernel source code. If you deployed the Visualinux by youself, You should manually patch the code in `scripts/kernel.patch/fs.kernfs.dir.c.patch` into the end of `kernel/fs/kernfs/dir.c`.
+*Note that the evaluation `dsl/textbook/14_kernfs.vl` requires a short hacking into Linux kernel source code. If you deployed the Visualinux by youself, You should manually patch the code in `scripts/kernel.patch/fs.kernfs.dir.c.patch` into the end of `kernel/fs/kernfs/dir.c`.*
